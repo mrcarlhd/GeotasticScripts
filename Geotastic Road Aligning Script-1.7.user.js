@@ -5,6 +5,8 @@
 // @match        *://*.geotastic.net/*
 // @run-at       document-start
 // @grant        none
+// @downloadURL  https://raw.githubusercontent.com/mrcarlhd/GeotasticScripts/main/Geotastic%20Road%20Aligning%20Script-1.7.user.js
+// @uploadURL    https://raw.githubusercontent.com/mrcarlhd/GeotasticScripts/main/Geotastic%20Road%20Aligning%20Script-1.7.user.js
 // ==/UserScript==
 
 (function() {
