@@ -6,6 +6,8 @@
 // @run-at       document-end
 // @grant        none
 // @author       chadGPT
+// @downloadURL  https://raw.githubusercontent.com/mrcarlhd/GeotasticScripts/main/Geotastic%20Upside%20Down%20Panorama-1.0.user.js
+// @uploadURL    https://raw.githubusercontent.com/mrcarlhd/GeotasticScripts/main/Geotastic%20Upside%20Down%20Panorama-1.0.user.js
 // ==/UserScript==
 
 (function() {
