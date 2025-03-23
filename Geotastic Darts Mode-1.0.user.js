@@ -6,8 +6,8 @@
 // @run-at       document-end
 // @grant        none
 // @author       chadgpt
-// @downloadURL  https://raw.githubusercontent.com/mrcarlhd/GeotasticScripts/main/DartMode.user.js
-// @uploadURL    https://raw.githubusercontent.com/mrcarlhd/GeotasticScripts/main/DartMode.user.js
+// @downloadURL  https://raw.githubusercontent.com/mrcarlhd/GeotasticScripts/main/Geotastic%20Darts%20Mode-1.0.user.js
+// @uploadURL    https://raw.githubusercontent.com/mrcarlhd/GeotasticScripts/main/Geotastic%20Darts%20Mode-1.0.user.js
 // ==/UserScript==
 
 (function() {
