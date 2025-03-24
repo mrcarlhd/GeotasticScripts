@@ -13,10 +13,45 @@
 (function() {
     "use strict";
 
-    /*-----------------------------------------------------------
-      Module 1: Darts Mode UI Injection (with Infinite Polling)
-    -----------------------------------------------------------*/
-    // Helper: Poll indefinitely for an element.
+    /************************************
+     * Module 1: Darts Mode UI Injection 
+     * (Switch Style with Animation & Continuous Polling)
+     ************************************/
+    
+    // Insert custom CSS for the switch animation and layout.
+    const styleModule1 = document.createElement('style');
+    styleModule1.textContent = `
+        /* Layout the container in a row so the switch & input are inline */
+        #dartsModeUI {
+            display: flex;
+            align-items: center;
+            margin-top: 5px;
+        }
+        /* Transition for the switch track and thumb only */
+        #dartsModeUI .v-input--switch__track, 
+        #dartsModeUI .v-input--switch__thumb {
+            transition: background-color 0.3s ease, transform 0.3s ease;
+        }
+        /* When enabled, only the switch track & thumb turn green */
+        #dartsModeUI.darts-enabled .v-input--switch__track {
+            background-color: #4caf50 !important;
+        }
+        #dartsModeUI.darts-enabled .v-input--switch__thumb {
+            transform: translateX(100%);
+            background-color: #4caf50 !important;
+        }
+        /* Style the target score input to be visible and wide */
+        #dartsTarget {
+            display: none;
+            margin-left: 8px;
+            width: 250px;
+            padding: 5px;
+            font-size: 14px;
+        }
+    `;
+    document.head.appendChild(styleModule1);
+
+    // Helper function: wait indefinitely for an element.
     function waitForElement(selector, callback) {
         const interval = 500;
         (function check() {
@@ -29,39 +64,53 @@
         })();
     }
 
-    // Injection function: Adds the Darts Mode UI (toggle button + input field) if not already present.
-    function injectDartsUI(container) {
-        if (document.getElementById('dartsModeUI')) return;
+    // Injection function for the Darts Mode UI (Module 1)
+    function injectDartsUISwitch(container) {
+        if (document.getElementById('dartsModeUI')) return; // prevent duplicate injection
+        
         const dartsHTML = `
-            <div id="dartsModeUI" class="v-input super-dense v-input--hide-details v-input--is-label-active v-input--is-dirty v-input--dense theme--dark v-text-field v-text-field--filled v-text-field--is-booted v-text-field--enclosed v-text-field--outlined" style="margin-top: 10px;">
+            <div id="dartsModeUI" class="v-input super-dense v-input--hide-details v-input--dense theme--dark v-input--selection-controls v-input--switch">
                 <div class="v-input__control">
                     <div class="v-input__slot">
-                        <label class="v-label v-label--active theme--dark" style="position: absolute; left: 0;">Darts Mode</label>
-                        <div class="v-select__selections" style="margin-top: 30px;">
-                            <button id="dartsToggle" class="v-btn v-btn--outlined v-btn--dense theme--dark" style="cursor: pointer;">Toggle Darts Mode</button>
-                            <input id="dartsTarget" type="number" placeholder="Enter target score" min="1" max="30000" style="display: none; margin-left: 10px;" />
+                        <div class="v-input--selection-controls__input">
+                            <input aria-checked="false" id="dartsModeSwitch" role="switch" type="checkbox" aria-disabled="false" value="">
+                            <div class="v-input--selection-controls__ripple"></div>
+                            <div class="v-input--switch__track theme--dark"></div>
+                            <div class="v-input--switch__thumb theme--dark"></div>
                         </div>
+                        <label for="dartsModeSwitch" class="v-label theme--dark" style="left: 0px; right: auto; position: relative;">Darts Mode</label>
                     </div>
                 </div>
+                <input id="dartsTarget" type="number" placeholder="Enter Target Score" min="1" max="30000"/>
             </div>
         `;
         container.insertAdjacentHTML('beforeend', dartsHTML);
-        console.log("Darts Mode UI injected.");
-
-        // Attach event listeners.
-        const toggleButton = document.getElementById('dartsToggle');
+        console.log("Darts Mode UI injected into container:", container);
+        
+        const switchInput = document.getElementById('dartsModeSwitch');
+        const dartsUI = document.getElementById('dartsModeUI');
         const targetInput = document.getElementById('dartsTarget');
-        let dartsEnabled = false;
-        toggleButton.addEventListener('click', () => {
-            dartsEnabled = !dartsEnabled;
-            if (dartsEnabled) {
+        
+        // When clicking anywhere in the switch container (except the input) toggle the switch.
+        dartsUI.addEventListener('click', (e) => {
+            if (e.target.id === 'dartsTarget') return;
+            switchInput.click();
+        });
+        
+        // When switch is toggled, show/hide target input and animate.
+        switchInput.addEventListener('change', () => {
+            if (switchInput.checked) {
                 targetInput.style.display = 'inline-block';
-                toggleButton.textContent = 'Darts Mode ON';
+                dartsUI.classList.add('darts-enabled');
+                console.log("Darts Mode enabled.");
             } else {
                 targetInput.style.display = 'none';
-                toggleButton.textContent = 'Toggle Darts Mode';
+                dartsUI.classList.remove('darts-enabled');
+                console.log("Darts Mode disabled.");
             }
         });
+        
+        // Validate and store target score when changed.
         targetInput.addEventListener('change', () => {
             const score = parseInt(targetInput.value, 10);
             if (isNaN(score) || score < 1 || score > 30000) {
@@ -74,65 +123,64 @@
             console.log("Darts target score stored:", score);
         });
     }
-
-    // For local game settings.
-    waitForElement('div.form-elements.mb-8', function(container) {
-        console.log("Local Game Scoring Settings container found.");
-        injectDartsUI(container);
-    });
-
-    // For online game settings.
-    waitForElement('div.online-settings-card', function(onlineContainer) {
-        const container = onlineContainer.querySelector('.form-elements.mb-8');
-        if (container) {
-            console.log("Online Game Scoring Settings container found.");
-            injectDartsUI(container);
-        } else {
-            console.log("Online Game Scoring Settings container not yet available.");
+    
+    // Continuous polling to re-inject the Darts Mode UI when returning to settings.
+    setInterval(() => {
+        if (document.getElementById('dartsModeUI')) return;
+        let localContainer = document.querySelector('div.form-elements.mb-8');
+        if (localContainer) {
+            injectDartsUISwitch(localContainer);
+            return;
         }
-    });
+        let onlineContainer = document.querySelector('div.online-settings-card .form-elements.mb-8');
+        if (onlineContainer) {
+            injectDartsUISwitch(onlineContainer);
+        }
+    }, 1000);
 
-    /*-----------------------------------------------------------
-      Module 2: Darts Target Score Display
-    -----------------------------------------------------------*/
-    // Create a banner element to display the target score during gameplay.
-    const targetDisplay = document.createElement('div');
-    targetDisplay.id = 'dartsTargetDisplay';
-    targetDisplay.style.position = 'fixed';
-    targetDisplay.style.top = '20px';
-    targetDisplay.style.left = '50%';
-    targetDisplay.style.transform = 'translateX(-50%)';
-    targetDisplay.style.padding = '10px 20px';
-    targetDisplay.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-    targetDisplay.style.color = '#fff';
-    targetDisplay.style.fontSize = '16px';
-    targetDisplay.style.zIndex = '10000';
-    targetDisplay.style.borderRadius = '5px';
-    targetDisplay.style.display = 'none';
-    document.body.appendChild(targetDisplay);
-
-    function updateTargetDisplay() {
-        // We assume the panorama is shown when an element with class '.gm-style' is present.
-        const panorama = document.querySelector('.gm-style');
-        if (panorama) {
-            const targetScore = window.dartsTargetScore || localStorage.getItem("dartsTargetScore");
-            targetDisplay.textContent = targetScore ? "Target Score = " + targetScore : "Target Score not set";
-            targetDisplay.style.display = 'block';
+    /************************************
+     * Module 2: Darts Target Score Display
+     * (Injected into finish-guess-container .meta-infos)
+     ************************************/
+    // We'll inject a new "box" in the meta-infos area of the finish-guess screen.
+    function waitForMetaInfos() {
+        const container = document.querySelector('.finish-guess-container .meta-infos');
+        if (container) {
+            injectTargetScoreBox(container);
         } else {
-            targetDisplay.style.display = 'none';
+            setTimeout(waitForMetaInfos, 500);
         }
     }
-    setInterval(updateTargetDisplay, 1000);
+    
+    function injectTargetScoreBox(container) {
+        if (document.getElementById('dartsTargetBox')) return;
+        const box = document.createElement('div');
+        box.className = 'box';
+        box.id = 'dartsTargetBox';
+        box.innerHTML = '<span>Target Score</span><span id="dartsTargetValue">Not set</span>';
+        container.insertBefore(box, container.firstChild);
+        console.log("Injected Target Score box into meta-infos.");
+    }
+    
+    function updateTargetScoreDisplay() {
+        const targetScore = window.dartsTargetScore || localStorage.getItem("dartsTargetScore");
+        const targetSpan = document.getElementById('dartsTargetValue');
+        if (targetSpan) {
+            targetSpan.textContent = targetScore ? targetScore : "Not set";
+        }
+    }
+    
+    waitForMetaInfos();
+    setInterval(updateTargetScoreDisplay, 1000);
 
-    /*-----------------------------------------------------------
-      Module 3: Darts Total Score Tracker (Online Mode – Rainbow for Perfect)
-    -----------------------------------------------------------*/
-    // Helper to parse numeric score from text.
+    /************************************
+     * Module 3: Darts Total Score Tracker (Online Mode – Rainbow for Perfect)
+     ************************************/
     function parseScoreFromText(text) {
         const num = parseFloat(text.replace(/[^0-9.]/g, ''));
         return isNaN(num) ? 0 : num;
     }
-
+    
     function checkOnlinePlayersScore() {
         let targetScore = parseInt(window.dartsTargetScore || localStorage.getItem("dartsTargetScore"), 10);
         if (!targetScore || isNaN(targetScore)) {
@@ -140,29 +188,27 @@
             return;
         }
         console.log("Target Score:", targetScore);
-
-        // Select player results from online mode final results.
-        // Using a selector based on our previous adjustments.
+        
+        // Select online player results.
         const playerResults = document.querySelectorAll('.online-player-results .player-result');
         if (!playerResults.length) {
             console.log("No player results found with selector '.online-player-results .player-result'.");
             return;
         }
-
+        
         let nonPerfectPlayers = [];
-
+        
         // Clear previous highlights.
         playerResults.forEach(result => {
             result.style.backgroundColor = '';
             result.style.background = '';
         });
-
+        
         playerResults.forEach(result => {
-            // Retrieve player's nickname.
             const nicknameEl = result.querySelector('.nickname-container span.nickname');
             const playerName = nicknameEl ? nicknameEl.textContent.trim() : "Unknown";
-
-            // Retrieve the total score from the element with class "total" (only the total score).
+            
+            // Get total score from the "total" element (only the total score).
             const totalScoreEl = result.querySelector('div.total span');
             if (!totalScoreEl) {
                 console.log(`No total score element for player: ${playerName}`);
@@ -170,29 +216,28 @@
             }
             const score = parseInt(totalScoreEl.textContent.replace(/[^0-9]/g, ''), 10);
             console.log(`Player "${playerName}" total score: ${score}`);
-
+            
             if (score > targetScore) {
-                result.style.backgroundColor = 'rgba(255, 0, 0, 0.3)'; // Red for busted.
+                result.style.backgroundColor = 'rgba(255, 0, 0, 0.3)'; // Red for bust.
             } else if (score === targetScore) {
                 result.style.background = 'linear-gradient(45deg, red, orange, yellow, green, blue, indigo, violet)'; // Rainbow for perfect.
             } else {
-                result.style.backgroundColor = 'rgba(255, 255, 0, 0.3)'; // Yellow for valid but not perfect.
+                result.style.backgroundColor = 'rgba(255, 255, 0, 0.3)'; // Yellow for valid non-perfect.
                 nonPerfectPlayers.push({ element: result, diff: targetScore - score, score: score });
             }
         });
-
-        // Among non-perfect players, determine the closest to target and highlight in green.
+        
+        // Among valid non-perfect players, highlight the closest to target in green.
         if (nonPerfectPlayers.length > 0) {
             nonPerfectPlayers.sort((a, b) => a.diff - b.diff);
             const bestPlayer = nonPerfectPlayers[0];
             bestPlayer.element.style.backgroundColor = 'rgba(0, 255, 0, 0.3)';
-            console.log(`Winner among non-perfect scores: Score = ${bestPlayer.score}, Difference = ${bestPlayer.diff}`);
+            console.log(`Winner among non-perfect scores: Score = ${bestPlayer.score}, Diff = ${bestPlayer.diff}`);
         } else {
-            console.log("No non-busted players found (or all players achieved perfect score).");
+            console.log("No valid non-busted players found (or all players achieved perfect score).");
         }
     }
-
-    // Check online players' scores periodically.
+    
     setInterval(checkOnlinePlayersScore, 2000);
 
 })();
