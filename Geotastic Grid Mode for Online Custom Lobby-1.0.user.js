@@ -5,6 +5,9 @@
 // @match        *://*.geotastic.net/*
 // @run-at       document-end
 // @grant        none
+// @author       chadgpt
+// @downloadURL  https://raw.githubusercontent.com/mrcarlhd/GeotasticScripts/main/Geotastic%20Grid%20Mode%20for%20Online%20Custom%20Lobby-1.0.user.js
+// @uploadURL    https://raw.githubusercontent.com/mrcarlhd/GeotasticScripts/main/Geotastic%20Grid%20Mode%20for%20Online%20Custom%20Lobby-1.0.user.js
 // ==/UserScript==
 
 (function(){
